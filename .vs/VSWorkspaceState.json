@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\Aether",
+    "\\Aether\\blender_ops",
+    "\\Aether\\core",
+    "\\Aether\\props",
+    "\\Aether\\ui_panels",
+    "\\Aether\\utils"
+  ],
+  "SelectedNode": "\\Aether\\__init__.py",
+  "PreviewInSolutionExplorer": false
+}

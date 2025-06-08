@@ -1,0 +1,24 @@
+schema_version = "1.0.0"
+
+id = "aether"
+version = "1.0.0"
+name = "Aether"
+tagline = "PBR Material Authoring"
+maintainer = "Luke Stilson <stilson.luke@gmail.com>"
+type = "add-on"
+blender_version_min = "4.4.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+
+tags = [
+  "Material",
+  "Game Engine",
+]
+
+platforms = [
+  "windows-x64",
+  "macos-x64",
+  "linux-x64",
+]
