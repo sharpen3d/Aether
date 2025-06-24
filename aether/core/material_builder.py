@@ -3,7 +3,7 @@
 
 import bpy
 import os
-
+from ..utils import append_content
 
 def apply_rendered_maps_to_material(scene):
     output_dir = bpy.path.abspath(scene.export_output_directory)
@@ -22,6 +22,9 @@ def apply_rendered_maps_to_material(scene):
 
     output_node = None
     pbr_node = None
+
+    append_content.ensure_node_group("stx_pbr")
+
     for node in nodes:
         if node.type == 'OUTPUT_MATERIAL':
             output_node = node
@@ -46,15 +49,31 @@ def apply_rendered_maps_to_material(scene):
     if not any(link.to_node == output_node and link.from_node == pbr_node for link in links):
         links.new(pbr_node.outputs[0], output_node.inputs[0])
 
-    expected = {item.map_type for item in scene.export_map_list}
+
+    # Ensure shared Texture Coordinate and Mapping nodes exist
+    texcoord_node = next((n for n in nodes if n.type == 'TEX_COORD'), None)
+    if not texcoord_node:
+        texcoord_node = nodes.new("ShaderNodeTexCoord")
+        texcoord_node.location = (-800, 0)
+
+    mapping_node = next((n for n in nodes if n.type == 'MAPPING'), None)
+    if not mapping_node:
+        mapping_node = nodes.new("ShaderNodeMapping")
+        mapping_node.location = (-600, 0)
+
+    # Ensure link from UV to Mapping
+    if not any(l.from_node == texcoord_node and l.to_node == mapping_node for l in links):
+        links.new(texcoord_node.outputs['UV'], mapping_node.inputs['Vector'])
+    
+    expected = {item.map_type.lower() for item in scene.export_map_list}
     existing = {
-        node.name: node
+        node.name.lower(): node
         for node in nodes
-        if node.type == 'TEX_IMAGE' and node.name in expected
+        if node.type == 'TEX_IMAGE' and node.name.lower() in expected
     }
 
     for node in list(nodes):
-        if node.type == 'TEX_IMAGE' and node.name not in expected:
+        if node.type == 'TEX_IMAGE' and node.name.lower() not in expected:
             nodes.remove(node)
 
     y_offset = 0
@@ -78,16 +97,30 @@ def apply_rendered_maps_to_material(scene):
         else:
             image.reload()
 
-        tex_node = existing.get(map_type)
+        tex_node = existing.get(map_type.lower())
         if not tex_node:
             tex_node = nodes.new("ShaderNodeTexImage")
             tex_node.name = map_type
             tex_node.label = map_type.title()
             tex_node.location = (0, y_offset)
             y_offset -= 300
+
         tex_node.image = image
 
-        socket = pbr_node.inputs.get(map_type.title())
+        # Ensure Mapping is connected to texture vector input
+        if not tex_node.inputs['Vector'].is_linked:
+            links.new(mapping_node.outputs['Vector'], tex_node.inputs['Vector'])
+
+
+        # Set color space for normal maps
+        if map_type.upper() == "NORMAL":
+            tex_node.image.colorspace_settings.name = 'Non-Color'
+
+        # Find matching socket case-insensitively
+        socket = next(
+            (s for s in pbr_node.inputs if s.name.lower() == map_type.lower()),
+            None
+        )
         if socket:
             for link in list(links):
                 if link.to_node == pbr_node and link.to_socket == socket:
@@ -95,7 +128,7 @@ def apply_rendered_maps_to_material(scene):
             links.new(tex_node.outputs['Color'], socket)
             print(f"✅ Linked {filename} to '{socket.name}'")
         else:
-            print(f"⚠️ No matching socket '{map_type.title()}' in stx_pbr")
+            print(f"⚠️ No matching socket for '{map_type}' in stx_pbr")
 
     return mat
 

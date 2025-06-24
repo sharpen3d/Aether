@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\blender_ops",
+    "\\core",
+    "\\props",
+    "\\ui_panels",
+    "\\utils"
+  ],
+  "SelectedNode": "\\blender_ops\\render_ops.py",
+  "PreviewInSolutionExplorer": false
+}

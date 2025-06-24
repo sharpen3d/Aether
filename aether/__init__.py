@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Aether",
     "author": "Luke Stilson",
-    "version": (1, 0, 0),
+    "version": (1, 0, 11),
     "blender": (4, 4, 0),
     "description": "PBR Material Authoring",
     "category": "Material",
@@ -18,9 +18,13 @@ modules = [
     blender_ops.render_ops,
     blender_ops.scene_setup_ops,
     blender_ops.object_add_ops,
-    utils.shader_links,
-    ui_panels.export_panel,
+    utils.aetherbake,
+    utils.sourceimporter,
+    utils.triplanarinput,
+   # utils.mapping_conversion,
+    utils.convert_principled,
     ui_panels.texture_panel,
+    ui_panels.export_panel,
 ]
 
 def register():

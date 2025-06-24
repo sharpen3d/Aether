@@ -88,25 +88,25 @@ class EXPORTMAP_OT_apply_map_settings(Operator):
         def normalize_name(name):
             return name.replace(" ", "").replace("_", "").lower()
 
-        # Direct access to the DMMT_Master node group
-        master_tree = bpy.data.node_groups.get('DMMT_Master')
+        # Direct access to the aether_master node group
+        master_tree = bpy.data.node_groups.get('aether_master')
         if not master_tree:
-            self.report({'ERROR'}, "Node group 'DMMT_Master' not found in bpy.data.node_groups")
+            self.report({'ERROR'}, "Node group 'aether_master' not found in bpy.data.node_groups")
             return {'CANCELLED'}
 
-        # Find DMMT_Switcher node inside the master group
+        # Find aether_switcher node inside the master group
         switcher_node = next(
-            (n for n in master_tree.nodes if n.type == 'GROUP' and n.node_tree and n.node_tree.name == 'DMMT_Switcher'),
+            (n for n in master_tree.nodes if n.type == 'GROUP' and n.node_tree and n.node_tree.name == 'aether_switcher'),
             None
         )
         if not switcher_node:
-            self.report({'ERROR'}, "DMMT_Switcher node not found in DMMT_Master")
+            self.report({'ERROR'}, "aether_switcher node not found in aether_master")
             return {'CANCELLED'}
 
-        # Find group output node in DMMT_Master
+        # Find group output node in aether_master
         output_node = next((n for n in master_tree.nodes if n.type == 'GROUP_OUTPUT'), None)
         if not output_node:
-            self.report({'ERROR'}, "Group Output not found in DMMT_Master")
+            self.report({'ERROR'}, "Group Output not found in aether_master")
             return {'CANCELLED'}
 
         # Remove existing link to 'Output' if any
@@ -114,7 +114,7 @@ class EXPORTMAP_OT_apply_map_settings(Operator):
             if link.to_node == output_node and link.to_socket.name == 'Output':
                 master_tree.links.remove(link)
 
-        # Find matching output socket in DMMT_Switcher based on normalized map_type
+        # Find matching output socket in aether_switcher based on normalized map_type
         target_name = normalize_name(item.map_type)
         target_socket = next(
             (s for s in switcher_node.outputs if normalize_name(s.name) == target_name),
@@ -122,7 +122,7 @@ class EXPORTMAP_OT_apply_map_settings(Operator):
         )
 
         if not target_socket:
-            self.report({'ERROR'}, f"No matching output for map type '{item.map_type}' in DMMT_Switcher")
+            self.report({'ERROR'}, f"No matching output for map type '{item.map_type}' in aether_switcher")
             return {'CANCELLED'}
 
         # Create new link from switcher output to group output 'Output'
@@ -152,22 +152,22 @@ class EXPORTMAP_OT_apply_default_settings(Operator):
         item.channel_format = 'RGBA'
         item.bit_depth = '8'
 
-        # Access DMMT_Master node group
-        master_tree = bpy.data.node_groups.get('DMMT_Master')
+        # Access aether_master node group
+        master_tree = bpy.data.node_groups.get('aether_master')
         if not master_tree:
-            self.report({'ERROR'}, "Node group 'DMMT_Master' not found")
+            self.report({'ERROR'}, "Node group 'aether_master' not found")
             return {'CANCELLED'}
 
-        # Locate the DMMT_Switcher node inside it
-        switcher_node = next((n for n in master_tree.nodes if n.type == 'GROUP' and n.node_tree and n.node_tree.name == 'DMMT_Switcher'), None)
+        # Locate the aether_switcher node inside it
+        switcher_node = next((n for n in master_tree.nodes if n.type == 'GROUP' and n.node_tree and n.node_tree.name == 'aether_switcher'), None)
         if not switcher_node:
-            self.report({'ERROR'}, "DMMT_Switcher node not found in DMMT_Master")
+            self.report({'ERROR'}, "aether_switcher node not found in aether_master")
             return {'CANCELLED'}
 
         # Find the group output node
         output_node = next((n for n in master_tree.nodes if n.type == 'GROUP_OUTPUT'), None)
         if not output_node:
-            self.report({'ERROR'}, "Group Output not found in DMMT_Master")
+            self.report({'ERROR'}, "Group Output not found in aether_master")
             return {'CANCELLED'}
 
         # Remove existing link to the shader output
@@ -175,10 +175,10 @@ class EXPORTMAP_OT_apply_default_settings(Operator):
             if link.to_node == output_node and link.to_socket.name == 'Output':
                 master_tree.links.remove(link)
 
-        # Connect the 'Principled' output from DMMT_Switcher
+        # Connect the 'Principled' output from aether_switcher
         target_socket = switcher_node.outputs.get('Principled')
         if not target_socket:
-            self.report({'ERROR'}, "'Principled' output not found in DMMT_Switcher")
+            self.report({'ERROR'}, "'Principled' output not found in aether_switcher")
             return {'CANCELLED'}
 
         master_tree.links.new(target_socket, output_node.inputs['Output'])

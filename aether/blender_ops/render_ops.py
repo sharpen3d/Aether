@@ -15,6 +15,8 @@ class EXPORTMAP_OT_render_all_maps(Operator):
     def execute(self, context):
         scene = context.scene
         export_list = scene.export_map_list
+        
+        revert_index = bpy.context.scene.export_map_index
 
         if not export_list:
             self.report({'WARNING'}, "No maps in export list")
@@ -56,11 +58,13 @@ class EXPORTMAP_OT_render_all_maps(Operator):
         scene.render.image_settings.color_mode = original_color_mode
         scene.render.image_settings.file_format = original_file_format
         scene.render.filepath = original_filepath
+        
+        bpy.ops.exportmap.apply_map_settings(index=revert_index)
 
         preview_obj = next((o for o in scene.objects if ".stx_preview" in o.name), None)
         mat = material_builder.apply_rendered_maps_to_material(scene)
         if mat and preview_obj:
-            preview_obj.active_material = mat
+            #preview_obj.active_material = mat
             preview_obj.modifiers["GeometryNodes"]["Socket_3"] = mat
 
         self.report({'INFO'}, "All maps rendered")

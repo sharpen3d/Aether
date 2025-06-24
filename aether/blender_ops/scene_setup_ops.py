@@ -3,6 +3,7 @@
 
 import bpy
 from bpy.types import Operator
+from ..utils import append_content
 
 
 class EXPORTMAP_OT_create_bake_scene(Operator):
@@ -62,6 +63,8 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
             obj.scale = (1.0, 1.0, 1.0)
             new_scene.collection.objects.link(obj)
 
+            append_content.ensure_node_group("stx_preview")
+
             mod = obj.modifiers.new(name="GeometryNodes", type='NODES')
             gn_group = bpy.data.node_groups.get("stx_preview")
             if not gn_group:
@@ -76,6 +79,7 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
 
 
         # Build default base plane
+        '''
         mesh = bpy.data.meshes.new(new_scene.custom_object_name + "_baselayer")
         obj = bpy.data.objects.new(mesh.name, mesh)
         new_scene.collection.objects.link(obj)
@@ -84,20 +88,22 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
             [], [(0, 1, 2, 3)]
         )
         obj.location = (0.5, 0.5, 0)
-
-        # Assign DMMT_Master material
-        mat = bpy.data.materials.new("My_Custom_Material")
+        '''
+        
+        # Assign aether_master material
+        append_content.ensure_node_group("aether_master")
+        mat = bpy.data.materials.new(new_scene.custom_object_name + "aether")
         mat.use_nodes = True
-        obj.data.materials.append(mat)
+       # obj.data.materials.append(mat)
 
         tree = mat.node_tree
         tree.nodes.clear()
         output = tree.nodes.new("ShaderNodeOutputMaterial")
         output.location = (400, 0)
 
-        group = bpy.data.node_groups.get("DMMT_Master")
+        group = bpy.data.node_groups.get("aether_master")
         if not group:
-            self.report({'ERROR'}, "Node group 'DMMT_Master' not found")
+            self.report({'ERROR'}, "Node group 'aether_master' not found")
             return {'CANCELLED'}
 
         group_node = tree.nodes.new("ShaderNodeGroup")
@@ -107,10 +113,9 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
         tree.links.new(group_node.outputs.get("Displacement"), output.inputs.get("Displacement"))
 
         # Create both object variants
-        obj_uv = create_stx_variant(".stx_uv", (0, 0, -1), False)
+        obj_uv = create_stx_variant(".stx_uv", (0, 0, 0), False)
         obj_preview = create_stx_variant(".stx_preview", (100, 100, 100), True)
         
-        obj_uv.hide_render = True
 
         # Add camera
         cam_data = bpy.data.cameras.new("Bake_Camera")
@@ -122,12 +127,15 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
         cam_obj.location = (0.5, 0.5, 10)
         new_scene.collection.objects.link(cam_obj)
         new_scene.camera = cam_obj
+        
+        append_content.ensure_workspace("Aether")
+        switch_to_workspace("Aether")
 
         # Viewport configuration
         view_areas = [area for area in context.window.screen.areas if area.type == 'VIEW_3D']
         if len(view_areas) >= 2:
-            cam_area = view_areas[0]
-            preview_area = view_areas[1]
+            cam_area = view_areas[1]
+            preview_area = view_areas[0]
 
             # Left: camera view
             for space in cam_area.spaces:
@@ -145,11 +153,49 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
         
 
         #trigger_texture_context_safely()
-
+        bpy.context.scene.export_output_directory = '//' + bpy.context.scene.custom_object_name + '/'
+        setup_inpaint_compositor()
+            
         self.report({'INFO'}, "Bake scene created")
         return {'FINISHED'}
 
 
+def switch_to_workspace(workspace_name: str):
+    for window in bpy.context.window_manager.windows:
+        for workspace in bpy.data.workspaces:
+            if workspace.name == workspace_name:
+                window.workspace = workspace
+                return
+    raise ValueError(f"Workspace '{workspace_name}' not found.")
+
+
+def setup_inpaint_compositor():
+    scene = bpy.context.scene
+    scene.use_nodes = True
+    tree = scene.node_tree
+    nodes = tree.nodes
+    links = tree.links
+
+    # Clear existing nodes
+    nodes.clear()
+
+    # Add nodes
+    render_node = nodes.new('CompositorNodeRLayers')
+    inpaint_node = nodes.new('CompositorNodeInpaint')
+    composite_node = nodes.new('CompositorNodeComposite')
+
+    # Position nodes
+    render_node.location = (-300, 0)
+    inpaint_node.location = (0, 0)
+    composite_node.location = (300, 0)
+
+    # Set inpaint distance to render resolution x
+    inpaint_node.distance = scene.render.resolution_x
+
+    # Create links
+    links.new(render_node.outputs['Image'], inpaint_node.inputs['Image'])
+    links.new(inpaint_node.outputs['Image'], composite_node.inputs['Image'])
+    
 def trigger_texture_context_safely():
     obj = bpy.context.active_object
     if not obj or obj.type != 'MESH':

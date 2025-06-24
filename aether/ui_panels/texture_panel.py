@@ -6,11 +6,12 @@ from bpy.types import Panel
 
 
 class MYTEXTURE_PT_panel(Panel):
-    bl_label = "My Texture Panel"
+    bl_label = "Texture Output"
     bl_idname = "MYTEXTURE_PT_panel"
+
     bl_space_type = 'VIEW_3D' 
     bl_region_type = 'UI'  
-    bl_category = 'Aether'   
+    bl_category = 'Aether'    
 
     def draw(self, context):
         layout = self.layout
