@@ -1,11 +1,12 @@
 bl_info = {
     "name": "Aether",
-    "author": "Luke Stilson",
-    "version": (1, 0, 11),
+    "version": (1, 0, 17),
     "blender": (4, 4, 0),
     "description": "PBR Material Authoring",
-    "category": "Material",
+    "category": "Development",
 }
+
+
 
 import importlib
 

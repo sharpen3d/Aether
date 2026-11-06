@@ -47,6 +47,7 @@ class EXPORTMAP_OT_apply_map_settings(Operator):
         scene = context.scene
         index = self.index
         scene.export_map_index = index
+        scene.aether_preview_mode = 'ACTIVE_MAP'
         
         item = scene.export_map_list[index]
 
@@ -151,6 +152,7 @@ class EXPORTMAP_OT_apply_default_settings(Operator):
         item.color_space = 'SRGB'
         item.channel_format = 'RGBA'
         item.bit_depth = '8'
+        scene.aether_preview_mode = 'ALL_MAPS'
 
         # Access aether_master node group
         master_tree = bpy.data.node_groups.get('aether_master')

@@ -6,6 +6,18 @@ from bpy.types import Operator
 from ..utils import append_content
 
 
+def _set_best_render_engine(scene):
+    engine_prop = scene.render.bl_rna.properties.get("engine")
+    if engine_prop is None:
+        return
+
+    available = {item.identifier for item in engine_prop.enum_items}
+    for engine_id in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES"):
+        if engine_id in available:
+            scene.render.engine = engine_id
+            return
+
+
 class EXPORTMAP_OT_create_bake_scene(Operator):
     bl_idname = "exportmap.create_bake_scene"
     bl_label = "Create Bake Scene"
@@ -22,7 +34,7 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
         context.window.scene = new_scene
 
         # Copy base render settings
-        new_scene.render.engine = 'BLENDER_EEVEE_NEXT'
+        _set_best_render_engine(new_scene)
         new_scene.render.film_transparent = True
         new_scene.render.resolution_x = 2048
         new_scene.render.resolution_y = 2048
@@ -31,6 +43,8 @@ class EXPORTMAP_OT_create_bake_scene(Operator):
         new_scene.render.image_settings.color_mode = 'RGBA'
         new_scene.render.image_settings.color_depth = '8'
         new_scene.render.image_settings.compression = 0
+        if hasattr(new_scene.render, "compositor_device"):
+            new_scene.render.compositor_device = 'GPU'
         new_scene.view_settings.view_transform = 'Standard'
         new_scene.display_settings.display_device = 'sRGB'
         new_scene.eevee.taa_render_samples = 1
@@ -189,8 +203,9 @@ def setup_inpaint_compositor():
     inpaint_node.location = (0, 0)
     composite_node.location = (300, 0)
 
-    # Set inpaint distance to render resolution x
-    inpaint_node.distance = scene.render.resolution_x
+    # Huge inpaint distances are dramatically slower and aren't needed for
+    # texture seam padding. Keep this artist-adjustable at scene level.
+    inpaint_node.distance = int(getattr(scene, "aether_inpaint_distance", 16))
 
     # Create links
     links.new(render_node.outputs['Image'], inpaint_node.inputs['Image'])

@@ -31,6 +31,19 @@ class MYTEXTURE_PT_panel(Panel):
         layout.separator()
 
         layout.prop(scene, "export_output_directory")
+        preview_box = layout.box()
+        preview_box.label(text="Fast Preview", icon='CAMERA_DATA')
+        preview_box.prop(scene, "aether_preview_mode", expand=True)
+        preview_box.prop(scene, "aether_preview_resolution_percentage", slider=True)
+        preview_box.prop(scene, "aether_inpaint_distance", slider=True)
+        preview_box.prop(scene, "aether_auto_preview_enabled")
+        if scene.aether_auto_preview_enabled:
+            preview_box.prop(scene, "aether_auto_preview_delay", slider=True)
+        preview_box.operator(
+            "exportmap.render_active_map_preview",
+            icon='RESTRICT_RENDER_OFF',
+            text="Render Fast Preview",
+        )
         layout.operator("exportmap.render_all_maps", icon='RENDER_STILL')
 
         if 0 <= index < len(scene.export_map_list):
